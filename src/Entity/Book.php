@@ -27,6 +27,7 @@ class Book
 
     #[ORM\ManyToOne(targetEntity: Author::class, inversedBy: 'books')]
     #[Groups('getBooks')]
+    #[ORM\JoinColumn(onDelete: "CASCADE")]
     private ?Author $author = null;
 
     public function getId(): ?int
