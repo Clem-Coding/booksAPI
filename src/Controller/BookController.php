@@ -13,7 +13,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Generator\UrlGenerator;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -73,47 +75,37 @@ final class BookController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/books', name: 'create-book', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
     public function createBook(
         Request $request,
         SerializerInterface $serializer,
         EntityManagerInterface $em,
         AuthorRepository $authorRepository,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        UrlGeneratorInterface $urlGenerator
     ): JsonResponse {
+
         $book = $serializer->deserialize($request->getContent(), Book::class, 'json');
 
         // On vérifie les erreurs
         $errors = $validator->validate($book);
         if ($errors->count() > 0) {
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+            //throw new HttpException(JsonResponse::HTTP_BAD_REQUEST, "La requête est invalide");
         }
-
-
-        // Autre possibilité
-        // $errorsList = [];
-        // $errors = $validator->validate($book);
-        // foreach ($errors as $error) {
-        //     $errorsList[$error->getPropertyPath()] = $error->getMessage();
-        // }
-
-        // return new JsonResponse([
-        //     'status' => 400,
-        //     'errors' => $errorsList
-        // ], JsonResponse::HTTP_BAD_REQUEST);
-
-        $content = $request->toArray();
-        $idAuthor = $content['iduthor'] ?? null;
-        $book->setAuthor($authorRepository->find($idAuthor));
-
 
         $em->persist($book);
         $em->flush();
 
+        $content = $request->toArray();
+        $idAuthor = $content['idAuthor'] ?? -1;
+
+        $book->setAuthor($authorRepository->find($idAuthor));
+
         $jsonBook = $serializer->serialize($book, 'json', ['groups' => 'getBooks']);
+        $location = $urlGenerator->generate('detail-book', ['id' => $book->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $location = $this->generateUrl('detail-book', ['id' => $book->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
-
-        return new JsonResponse($jsonBook, Response::HTTP_CREATED, ["location" => $location], true);
+        return new JsonResponse($jsonBook, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
 
@@ -135,17 +127,26 @@ final class BookController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/books/{id}', name: 'update-book', methods: ['PUT'])]
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour mettre à jour un livre')]
     public function updateBook(
-        Book $book,
+        Book $currentBook,
         Request $request,
         SerializerInterface $serializer,
         EntityManagerInterface $em,
-        AuthorRepository $authorRepository
+        AuthorRepository $authorRepository,
+        ValidatorInterface $validator
     ): JsonResponse {
 
-        $updatedBook = $serializer->deserialize($request->getContent(), Book::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $book]);
+        $updatedBook = $serializer->deserialize($request->getContent(), Book::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $currentBook]);
+
+        // On vérifie les erreurs
+        $errors = $validator->validate($updatedBook);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
         $content = $request->toArray();
-        $idAuthor = $content['idAuthor'] ?? null;
+        $idAuthor = $content['idAuthor'] ?? -1;
 
         $updatedBook->setAuthor($authorRepository->find($idAuthor));
 

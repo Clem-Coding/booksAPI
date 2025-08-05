@@ -82,7 +82,7 @@ symfony console doctrine:fixtures:load
 
 ### Génération des clés JWT
 
-Créer le dossier `jwt` dans `config`
+Créer le dossier `jwt` dans `config`.  
 À exécuter dans Git Bash pour embarquer OpenSSL
 
 -   Générer la clé privée
