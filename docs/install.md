@@ -66,6 +66,12 @@ il faut décommenter cette ligne dans le fichier php.ini pour activer sodium : `
 composer require lexik/jwt-authentication-bundle
 ```
 
+### Installer HATEOAS et JMSSerializer
+
+```bash
+composer require willdurand/hateoas-bundle
+```
+
 ## 2. Commandes d'exécution
 
 ### Mettre à jour la base de données

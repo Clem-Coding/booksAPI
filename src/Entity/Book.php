@@ -5,8 +5,30 @@ namespace App\Entity;
 use App\Repository\BookRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Hateoas\Configuration\Annotation as Hateoas;
+
+
+/*
+ * @Hateoas\Relation(
+ *      "delete",
+ *      href = @Hateoas\Route(
+ *          "deleteBook",
+ *          parameters = { "id" = "expr(object.getId())" }
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups={"getBooks"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))")
+ * )
+
+ * @Hateoas\Relation(
+ *      "update",
+ *      href = @Hateoas\Route(
+ *          "updateBook",
+ *          parameters = { "id" = "expr(object.getId())" }
+ *      ),
+ *      exclusion = @Hateoas\Exclusion(groups={"getBooks"}, excludeIf = "expr(not is_granted('ROLE_ADMIN'))")
+ * )
+ */
 
 #[ORM\Table(name: "books")]
 #[ORM\Entity(repositoryClass: BookRepository::class)]
@@ -34,7 +56,7 @@ class Book
     private ?string $coverText = null;
 
     #[ORM\ManyToOne(targetEntity: Author::class, inversedBy: 'books')]
-    #[Groups('getBooks')]
+    #[Groups(['getBooks'])]
     #[ORM\JoinColumn(onDelete: "CASCADE")]
     private ?Author $author = null;
 

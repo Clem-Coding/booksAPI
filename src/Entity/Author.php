@@ -8,7 +8,20 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Hateoas\Configuration\Annotation as Hateoas;
+// use JMS\Serializer\Annotation\Groups;
 
+
+/**
+ * @Hateoas\Relation(
+ *     "self",
+ *     href = @Hateoas\Route(
+ *         "detail-book",
+ *         parameters = { "id" = "expr(object.getId())" }
+ *     ),
+ *     exclusion = @Hateoas\Exclusion(groups={"getBooks"})
+ * )
+ */
 #[ORM\Table(name: "authors")]
 #[ORM\Entity(repositoryClass: AuthorRepository::class)]
 class Author
