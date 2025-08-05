@@ -15,6 +15,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class BookController extends AbstractController
 {
@@ -46,8 +47,6 @@ final class BookController extends AbstractController
     #[Route('/api/books/{id}', name: 'detail-book', methods: ['GET'])]
     public function getDetailBook(Book $book, SerializerInterface $serializer): JsonResponse
     {
-
-
         $jsonBook = $serializer->serialize($book, 'json', ['groups' => 'getBooks']);
         return new JsonResponse($jsonBook, Response::HTTP_OK, [], true);
     }
@@ -78,13 +77,34 @@ final class BookController extends AbstractController
         Request $request,
         SerializerInterface $serializer,
         EntityManagerInterface $em,
-        AuthorRepository $authorRepository
+        AuthorRepository $authorRepository,
+        ValidatorInterface $validator
     ): JsonResponse {
         $book = $serializer->deserialize($request->getContent(), Book::class, 'json');
+
+        // On vérifie les erreurs
+        $errors = $validator->validate($book);
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+
+        // Autre possibilité
+        // $errorsList = [];
+        // $errors = $validator->validate($book);
+        // foreach ($errors as $error) {
+        //     $errorsList[$error->getPropertyPath()] = $error->getMessage();
+        // }
+
+        // return new JsonResponse([
+        //     'status' => 400,
+        //     'errors' => $errorsList
+        // ], JsonResponse::HTTP_BAD_REQUEST);
 
         $content = $request->toArray();
         $idAuthor = $content['iduthor'] ?? null;
         $book->setAuthor($authorRepository->find($idAuthor));
+
 
         $em->persist($book);
         $em->flush();

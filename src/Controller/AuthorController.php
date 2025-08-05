@@ -13,6 +13,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class AuthorController extends AbstractController
 {
@@ -69,9 +70,24 @@ final class AuthorController extends AbstractController
         Request $request,
         SerializerInterface $serializer,
         EntityManagerInterface $em,
-        AuthorRepository $authorRepository
+        AuthorRepository $authorRepository,
+        ValidatorInterface $validator
     ): JsonResponse {
         $author = $serializer->deserialize($request->getContent(), Author::class, 'json');
+
+        $errors = $validator->validate($author);
+        $errorsList = [];
+
+        foreach ($errors as $error) {
+            $errorsList[$error->getPropertyPath()] = $error->getMessage();
+        }
+
+        if (count($errorsList) > 0) {
+            return new JsonResponse([
+                'status' => 400,
+                'errors' => $errorsList
+            ], JsonResponse::HTTP_BAD_REQUEST);
+        }
 
         $em->persist($author);
         $em->flush();
