@@ -1,11 +1,11 @@
-# 🛠️ Commandes d'installation des dépendances Symfony API REST
+# 🛠️ Commandes principales pour créer une API REST avec Symfony
 
 ## Pré-requis
 
 -   [Symfony CLI](https://symfony.com/download)
 -   [Composer](https://getcomposer.org/)
 
-### Commandes d'installation
+## 1. Commandes d'installation des dépendances
 
 ### Installer le projet
 
@@ -60,13 +60,13 @@ composer require security
 ### Installer le bundle LexitJWT
 
 Si erreur d’extension manquante lors de l’installation avec Composer,
-il faut décommenter cette ligne dans le fichier php.ini pour activer sodium : ;extension=sodium
+il faut décommenter cette ligne dans le fichier php.ini pour activer sodium : `;extension=sodium`
 
 ```bash
 composer require lexik/jwt-authentication-bundle
 ```
 
-## Commandes d'exécution
+## 2. Commandes d'exécution
 
 ### Mettre à jour la base de données
 
@@ -77,5 +77,24 @@ symfony console doctrine:schema:update --force
 ### Exécuter les fixtures
 
 ```bash
-php bin/console doctrine:fixtures:load
+symfony console doctrine:fixtures:load
 ```
+
+### Génération des clés JWT
+
+Créer le dossier `jwt` dans `config`
+À exécuter dans Git Bash pour embarquer OpenSSL
+
+-   Générer la clé privée
+
+```bash
+openssl genpkey -out config/jwt/private.pem -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096
+```
+
+-   Générer la clé publique
+
+```bash
+openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout
+```
+
+Mettre à jour la passphrase dans le .env.local
