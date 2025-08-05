@@ -26,28 +26,22 @@ class BookRepository extends ServiceEntityRepository
     }
 
 
-    //    /**
-    //     * @return Book[] Returns an array of Book objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('b')
-    //            ->andWhere('b.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('b.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    // Pour éviter les problèmes liés au lazy loading de Doctrine (qui charge les données à la demande),
+    // on peut forcer un chargement complet des données directement dans la méthode findAllWithPagination.
 
-    //    public function findOneBySomeField($value): ?Book
-    //    {
-    //        return $this->createQueryBuilder('b')
-    //            ->andWhere('b.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    // Cela permet que toutes les infos soient prêtes et que la mise en cache fonctionne correctement, sans toucher au contrôleur.
+    // Concrètement, on change un peu la requête pour lui dire : « Ne charge pas les données petit à petit (lazy), mais charge tout d’un coup (eager) ».
+    // C’est ce qu’on appelle définir le fetchMode à FETCH_EAGER au lieu de FETCH_LAZY (qui est le mode par défaut).
+
+    // public function findAllWithPagination($page, $limit)
+    // {
+
+    //     $qb = $this->createQueryBuilder('b')
+    //         ->setFirstResult(($page - 1) * $limit)
+    //         ->setMaxResults($limit);
+
+    //     $query = $qb->getQuery();
+    //     $query->setFetchMode(Book::class, "author", \Doctrine\ORM\Mapping\ClassMetadata::FETCH_EAGER);
+    //     return $query->getResult();
+    // }
 }

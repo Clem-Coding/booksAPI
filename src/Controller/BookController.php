@@ -8,6 +8,7 @@ use App\Repository\BookRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Util\Json;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Cache\Adapter\TagAwareAdapter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -18,6 +19,8 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 final class BookController extends AbstractController
 {
@@ -30,23 +33,34 @@ final class BookController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/api/books', name: 'books', methods: ['GET'])]
-    public function getAllBooks(BookRepository $bookRepository, SerializerInterface $serializer, Request $request): JsonResponse
+    public function getAllBooks(BookRepository $bookRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
 
+
         $page = $request->get('page');
-        $limit = $request->get('limit');
+        $limit = $request->get('limit', 10);
 
-        if ($page && $limit) {
-            $bookList = $bookRepository->findAllWithPagination($page, $limit);
-        } else {
-            $bookList = $bookRepository->findAll();
-        }
+        $idCache = $page && $limit ? "books_list_page{$page}_limit{$limit}" : "books_list_all";
 
+        $jsonBookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $page, $limit, $serializer) {
 
-        $jsonBookList = $serializer->serialize($bookList, 'json', ['groups' => 'getBooks']);
+            // echo "L'élément n'est pas en cache ! \n";
+
+            $item->tag('booksCache');
+
+            if ($page && $limit) {
+                $bookList = $bookRepository->findAllWithPagination($page, $limit);
+            } else {
+                $bookList = $bookRepository->findAll();
+            }
+
+            // Sérialisation dans le cache pour éviter lazy loading après (ou autre soluion cf BookRepository avec le fetchmode)
+            return $serializer->serialize($bookList, 'json', ['groups' => 'getBooks']);
+        });
 
         return new JsonResponse($jsonBookList, Response::HTTP_OK, [], true);
     }
+
 
 
     /**
@@ -175,8 +189,9 @@ final class BookController extends AbstractController
      * @return JsonResponse 
      */
     #[Route('/api/books/{id}', name: 'delete-book', methods: ['DELETE'])]
-    public function deleteBook(Book $book, EntityManagerInterface $em): JsonResponse
+    public function deleteBook(Book $book, EntityManagerInterface $em, TagAwareCacheInterface $cache): JsonResponse
     {
+        $cache->invalidateTags(['booksCache']);
         $em->remove($book);
         $em->flush();
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
