@@ -80,6 +80,12 @@ composer require nelmio/api-doc-bundle
 
 a besoin du moteur de template Twig pour fonctionner (`composer require twig asset`)
 
+### Installer API platform
+
+```bash
+composer require api
+```
+
 ## 2. Commandes d'exécution
 
 ### Mettre à jour la base de données
