@@ -72,6 +72,14 @@ composer require lexik/jwt-authentication-bundle
 composer require willdurand/hateoas-bundle
 ```
 
+### Installer Nelmio
+
+```bash
+composer require nelmio/api-doc-bundle
+```
+
+a besoin du moteur de template Twig pour fonctionner (`composer require twig asset`)
+
 ## 2. Commandes d'exécution
 
 ### Mettre à jour la base de données

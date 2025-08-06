@@ -1,6 +1,6 @@
 # Books API 📚
 
-A comprehensive REST API for managing books and authors, built with Symfony 7.3 and modern web development practices.
+A structured REST API to handle books and authors, developed with Symfony 7.3.
 
 ## Features
 

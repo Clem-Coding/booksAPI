@@ -25,18 +25,54 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\Cache\TagAwareCacheInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Annotation\Security;
+use Nelmio\ApiDocBundle\Attribute\Model as AttributeModel;
+use OpenApi\Attributes as OA;
+
 
 final class BookController extends AbstractController
 {
 
-    /**
-     * Cette méthode permet de récupérer l'ensemble des livres. 
-     *
-     * @param BookRepository $bookRepository
-     * @param SerializerInterface $serializer
-     * @return JsonResponse
-     */
     #[Route('/api/books', name: 'books', methods: ['GET'])]
+    #[OA\Get(
+        path: '/api/books',
+        summary: 'Retourne la liste des livres',
+        description: 'Cette méthode permet de récupérer l\'ensemble des livres avec pagination',
+        tags: ['Books'],
+        parameters: [
+            new OA\Parameter(
+                name: 'page',
+                description: 'La page que l\'on veut récupérer',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, default: 1)
+            ),
+            new OA\Parameter(
+                name: 'limit',
+                description: 'Le nombre d\'éléments que l\'on veut récupérer',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 100, default: 10)
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Liste des livres',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        ref: new AttributeModel(type: Book::class, groups: ['getBooks'])
+                    )
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Paramètres invalides'
+            )
+        ]
+    )]
     public function getAllBooks(BookRepository $bookRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
 
@@ -68,14 +104,37 @@ final class BookController extends AbstractController
 
 
 
-    /**
-     * Cette méthode permet de récupérer un livre en particulier en fonction de son id. 
-     *
-     * @param Book $book
-     * @param SerializerInterface $serializer
-     * @return JsonResponse
-     */
     #[Route('/api/books/{id}', name: 'detail-book', methods: ['GET'])]
+    #[OA\Get(
+        path: '/api/books/{id}',
+        summary: 'Récupère un livre par son ID',
+        description: 'Cette méthode permet de récupérer un livre en particulier en fonction de son id.',
+        tags: ['Books'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                description: 'ID du livre à récupérer',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer', minimum: 1)
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Détails du livre',
+                content: new OA\JsonContent(ref: '#/components/schemas/Book')
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Livre non trouvé'
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'ID invalide'
+            )
+        ]
+    )]
     public function getDetailBook(Book $book, SerializerInterface $serializer, VersioningService $versioningService): JsonResponse
     {
         $version = $versioningService->getVersion();

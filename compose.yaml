@@ -1,7 +1,7 @@
 services:
   mariadb:
     image: mariadb:11.8.2
-    container_name: mariadb
+    container_name: mariadb_booksAPI
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: booksapi
